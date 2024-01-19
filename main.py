@@ -2,41 +2,79 @@ import torch
 import torchaudio
 import os
 from jiwer import wer
-from torchaudio.models.decoder import ctc_decoder
 
-Data = get_data_set()
+from greedyctc import GreedyCTCDecoder
+
+
+def get_data():
+    # تعریف مسیر پوشه حاوی تمام فایل‌ها
+    folder_path = "D:\\Vscode_Projects\\python-tutorial\\p340"
+
+    # لیستی برای ذخیره اطلاعات فایل‌ها
+    data_list = []
+
+    # گردش در تمام فایل‌ها
+    for i in range(3, 10):
+        # ساخت مسیر فایل تکست
+        if i == 23:
+            continue
+        text_file_path = os.path.join(folder_path, f"p340_{i:03d}.txt")
+
+        # ساخت مسیر فایل صوتی
+        audio_file_path = os.path.join(folder_path, f"p340_{i:03d}_mic1.flac")
+
+        # بررسی وجود فایل تکست
+        if os.path.exists(text_file_path):
+            # خواندن محتوای فایل تکست
+            with open(text_file_path, "r", encoding="utf-8") as text_file:
+                text_content = text_file.read()
+
+            # افزودن اطلاعات به لیست
+            data_list.append(
+                {
+                    "text": text_content,
+                    "audio": audio_file_path,
+                }
+            )
+        else:
+            print(f"فایل تکست p340_{i:03d}.txt یافت نشد.")
+    return data_list
+
+
+data_list = get_data()
+
 # Load the model and set the device
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_100H
 model = bundle.get_model()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
-# Create the decoder for WER calculation
-decoder = ctc_decoder(labels=bundle.get_labels())
+Decoder = GreedyCTCDecoder(labels=bundle.get_labels())
+
 # Iterate over each audio-text pair
 total_wer = 0.0
 total_items = 0
-for item in Data:
+for item in data_list:
     audio_path = item["audio"]
     text = item["text"]
 
     # Load the waveform
-    waveform, sample_rate = torchaudio.load(audio_path)
+    waveform, sample_rate = torchaudio.load(audio_path, format="flac")
     waveform = waveform.to(device)
 
-    #  Perform classification using the model
+    # Perform classification using the model
     with torch.inference_mode():
         emission, _ = model(waveform)
 
-    # Get the transcription from the emission using the decoder
-    transcript = decoder(emission[0])
-    # Calculate the Word Error Rate (WER)
+    # Get the transcription from the CTC decoder
+    transcript = Decoder(emission[0])
 
+    # Calculate the Word Error Rate (WER)
     wer_score = wer(text.lower(), transcript.lower())
+    print(wer_score)
     total_wer += wer_score
     total_items += 1
 
     # Compute the average WER
-
     average_wer = (total_wer / total_items) * 100
     print(
         "File: ",
@@ -47,6 +85,7 @@ for item in Data:
         text,
         f"WER : {average_wer}",
     )
-    # Compute the average WER
-average_wer = total_wer / total_items
+
+# Compute the final average WER
+average_wer = (total_wer / total_items) * 100
 print("Average Word Error Rate:", average_wer)
