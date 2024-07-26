@@ -17,7 +17,6 @@ Install dependencies using pip:
 ```bash
 pip install torch torchaudio jiwer 
 
-git clone <repository_url>
-cd <repository_folder>
+git clone https://github.com/sadeghsk1379/pytorch.git
 
 python speech_to_text.py
