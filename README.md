@@ -19,4 +19,4 @@ pip install torch torchaudio jiwer
 
 git clone https://github.com/sadeghsk1379/pytorch.git
 
-python speech_to_text.py
+python main.py
