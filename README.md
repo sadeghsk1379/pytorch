@@ -10,15 +10,14 @@ This project demonstrates speech-to-text transcription using the Wav2Vec2 model 
 - PyTorch
 - torchaudio
 - jiwer
-- greedyctc
+
 
 Install dependencies using pip:
 
 ```bash
-pip install torch torchaudio jiwer greedyctc
+pip install torch torchaudio jiwer 
 
 git clone <repository_url>
 cd <repository_folder>
 
-```run
 python speech_to_text.py
